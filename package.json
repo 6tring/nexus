@@ -1,0 +1,19 @@
+{
+  "name": "data-mapping-manager-lite",
+  "version": "1.0.0",
+  "description": "Simplified data mapping management tool",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "setup:db": "psql -U postgres -d mapping_manager_lite -f server/database.sql"
+  },
+  "keywords": ["mapping", "data", "management"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
