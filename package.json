@@ -10,10 +10,17 @@
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
     "setup:db": "psql -U postgres -d mapping_manager_lite -f server/database.sql"
   },
-  "keywords": ["mapping", "data", "management"],
+  "keywords": [
+    "mapping",
+    "data",
+    "management"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7"
   }
 }

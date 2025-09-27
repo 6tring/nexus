@@ -12,7 +12,7 @@ function App() {
     filteredMappings,
     domains,
     
-    // Source-related data (NEW)
+    // Source-related data
     sources,
     selectedSource,
     sourceStats,
@@ -40,8 +40,9 @@ function App() {
     handleImport,
     handleExport,
     clearValidationError,
+    refreshData, // Now available from useDataManagement
     
-    // Source handlers (NEW)
+    // Source handlers
     handleSourceChange,
     handleClearSampleData,
     handleDeleteSource,
@@ -89,6 +90,7 @@ function App() {
         handleCellEdit={handleCellEdit}
         setEditingCell={setEditingCell}
         clearValidationError={clearValidationError}
+        onRefresh={refreshData} // Pass the refresh function to MappingTable
       />
     </div>
   );

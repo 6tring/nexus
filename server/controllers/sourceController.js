@@ -52,9 +52,18 @@ export const getAllSources = async (req, res) => {
 
 // Clear all data (previously named clearSampleData)
 export const clearSampleData = async (req, res) => {
+  const client = await pool.connect();
+  
   try {
     // Start a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
+    
+    // Set session context for audit logging if available
+    if (req.setDbSessionContext) {
+      await req.setDbSessionContext(client, {
+        changeReason: 'Clear all data'
+      });
+    }
     
     // Delete ALL mappings (not just sample data)
     // Note: This deletes everything - use with caution
@@ -63,10 +72,10 @@ export const clearSampleData = async (req, res) => {
       RETURNING id
     `;
     
-    const result = await pool.query(deleteQuery);
+    const result = await client.query(deleteQuery);
     
     // Commit the transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     
     res.json({
       message: 'All data cleared successfully',
@@ -74,9 +83,11 @@ export const clearSampleData = async (req, res) => {
     });
   } catch (error) {
     // Rollback on error
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error clearing all data:', error);
     res.status(500).json({ error: 'Failed to clear data' });
+  } finally {
+    client.release();
   }
 };
 
@@ -190,7 +201,7 @@ function formatImportDisplayName(importString) {
   }
 }
 
-// Delete a single data source
+// Delete a single data source - FIXED with proper session context
 export const deleteSource = async (req, res) => {
   const { sourceName } = req.params;
   
@@ -208,32 +219,49 @@ export const deleteSource = async (req, res) => {
     });
   }
   
+  const client = await pool.connect();
+  
   try {
     // Start a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     
-    // Delete mappings for this specific source
-    const deleteQuery = `
-      DELETE FROM mappings 
-      WHERE data_source = $1
+    // Set session context for audit logging if available
+    if (req.setDbSessionContext) {
+      await req.setDbSessionContext(client, {
+        changeReason: `Delete data source: ${sourceName}`
+      });
+    }
+    
+    // For soft delete (recommended approach):
+    // Update mappings to mark as deleted instead of hard delete
+    const softDeleteQuery = `
+      UPDATE mappings 
+      SET 
+        deleted_at = CURRENT_TIMESTAMP,
+        deleted_by = current_session_id(),
+        status = 'inactive'
+      WHERE data_source = $1 AND deleted_at IS NULL
       RETURNING id
     `;
     
-    const result = await pool.query(deleteQuery, [sourceName]);
+    const result = await client.query(softDeleteQuery, [sourceName]);
     
     // Commit the transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     
     res.json({
       message: 'Data source deleted successfully',
       deletedCount: result.rowCount,
-      deletedSource: sourceName
+      deletedSource: sourceName,
+      softDeleted: true
     });
   } catch (error) {
     // Rollback on error
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error deleting data source:', error);
     res.status(500).json({ error: 'Failed to delete data source' });
+  } finally {
+    client.release();
   }
 };
 
@@ -249,25 +277,37 @@ export const mergeSources = async (req, res) => {
     return res.status(400).json({ error: 'Either target source or new source name must be provided' });
   }
   
+  const client = await pool.connect();
+  
   try {
     // Start a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
+    
+    // Set session context for audit logging if available
+    if (req.setDbSessionContext) {
+      await req.setDbSessionContext(client, {
+        changeReason: `Merge sources: ${sourcesToMerge.join(', ')}`
+      });
+    }
     
     // Determine the final source name
     const finalSource = newSourceName || targetSource;
     
-    // Update all mappings from the sources to be merged
+    // Update all mappings from the sources to be merged (excluding soft-deleted)
     const updateQuery = `
       UPDATE mappings 
-      SET data_source = $1
-      WHERE data_source = ANY($2::text[])
+      SET 
+        data_source = $1,
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = current_session_id()
+      WHERE data_source = ANY($2::text[]) AND deleted_at IS NULL
       RETURNING id
     `;
     
-    const result = await pool.query(updateQuery, [finalSource, sourcesToMerge]);
+    const result = await client.query(updateQuery, [finalSource, sourcesToMerge]);
     
     // Commit the transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     
     res.json({
       message: 'Sources merged successfully',
@@ -276,8 +316,63 @@ export const mergeSources = async (req, res) => {
     });
   } catch (error) {
     // Rollback on error
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error merging sources:', error);
     res.status(500).json({ error: 'Failed to merge sources' });
+  } finally {
+    client.release();
+  }
+};
+
+// NEW FUNCTION: Restore soft-deleted mappings from a source
+export const restoreSource = async (req, res) => {
+  const { sourceName } = req.params;
+  
+  if (!sourceName || sourceName === 'all') {
+    return res.status(400).json({ 
+      error: 'Invalid source name' 
+    });
+  }
+  
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Set session context for audit logging if available
+    if (req.setDbSessionContext) {
+      await req.setDbSessionContext(client, {
+        changeReason: `Restore data source: ${sourceName}`
+      });
+    }
+    
+    // Restore soft-deleted mappings
+    const restoreQuery = `
+      UPDATE mappings 
+      SET 
+        deleted_at = NULL,
+        deleted_by = NULL,
+        status = 'active',
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = current_session_id()
+      WHERE data_source = $1 AND deleted_at IS NOT NULL
+      RETURNING id
+    `;
+    
+    const result = await client.query(restoreQuery, [sourceName]);
+    
+    await client.query('COMMIT');
+    
+    res.json({
+      message: 'Data source restored successfully',
+      restoredCount: result.rowCount,
+      restoredSource: sourceName
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error restoring data source:', error);
+    res.status(500).json({ error: 'Failed to restore data source' });
+  } finally {
+    client.release();
   }
 };

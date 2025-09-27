@@ -98,6 +98,21 @@ export function useDataManagement() {
     }
   };
 
+  // ADDED: Refresh function for components to trigger data reload
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      // Reload all data to ensure consistency
+      await Promise.all([
+        loadMappings(),
+        loadSources()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+    setLoading(false);
+  };
+
   // Filtering logic (now includes source consideration)
   const filterMappings = () => {
     let filtered = [...mappings];
@@ -288,6 +303,11 @@ export function useDataManagement() {
       // Display import results to user (enhanced with source info)
       let message = `Import completed: ${result.imported} records added`;
       
+      // ADDED: Show updated count if any
+      if (result.updated > 0) {
+        message += `, ${result.updated} records updated`;
+      }
+      
       if (result.dataSource) {
         message += `\nData source: ${result.dataSource}`;
       }
@@ -381,6 +401,7 @@ export function useDataManagement() {
     handleExport,
     clearValidationError,
     loadMappings,
+    refreshData, // ADDED: Expose refresh function
     
     // NEW: Source-related handlers
     handleSourceChange,
