@@ -20,6 +20,21 @@ export async function importCSV(req, res) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
     
+    // Generate timestamp and include filename for this import batch
+    const now = new Date();
+    const timestamp = now.toISOString()
+      .replace(/[-:]/g, '')
+      .replace('T', '_')
+      .substring(0, 15); // Format: YYYYMMDD_HHMMSS
+    
+    // Get filename without extension
+    const originalFilename = req.file.originalname || req.file.filename;
+    const filenameWithoutExt = originalFilename.replace(/\.[^/.]+$/, "");
+    const cleanFilename = filenameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
+    
+    // Format: import_filename_YYYYMMDD_HHMMSS
+    const dataSource = `import_${cleanFilename}_${timestamp}`;
+    
     const fileContent = await fs.readFile(req.file.path, 'utf-8');
     const records = [];
     
@@ -68,9 +83,10 @@ export async function importCSV(req, res) {
           continue;
         }
         
+        // Insert with data_source and created_at
         const query = `
-          INSERT INTO mappings (client_id, source, target, domain, status)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO mappings (client_id, source, target, domain, status, data_source, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `;
         
         const result = await client.query(query, [
@@ -78,7 +94,8 @@ export async function importCSV(req, res) {
           source,
           target || null,
           domain,
-          status
+          status,
+          dataSource  // Set the import timestamp as data source
         ]);
         
         if (result.rowCount > 0) imported++;
@@ -98,6 +115,8 @@ export async function importCSV(req, res) {
       imported, 
       skipped,
       total: records.length,
+      dataSource: dataSource,  // Include the source identifier in response
+      importDate: now.toISOString(),
       duplicates: duplicates.length > 0 ? duplicates.slice(0, 10) : undefined,
       errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
       hasMoreDuplicates: duplicates.length > 10,
@@ -124,19 +143,39 @@ export async function importCSV(req, res) {
 
 export async function exportCSV(req, res) {
   try {
-    const { domain } = req.query;
+    const { domain, dataSource } = req.query;
     
-    let query = 'SELECT source, target, domain, status FROM mappings';
-    const params = [];
+    let query = 'SELECT source, target, domain, status FROM mappings WHERE client_id = $1';
+    const params = [process.env.CLIENT_ID || 'default'];
+    let paramCount = 1;
+    
+    // Add data source filter if provided
+    if (dataSource && dataSource !== 'all') {
+      query += ` AND data_source = $${++paramCount}`;
+      params.push(dataSource);
+    }
     
     if (domain && domain !== 'all') {
-      query += ' WHERE domain = $1';
+      query += ` AND domain = $${++paramCount}`;
       params.push(domain);
     }
     
     query += ' ORDER BY domain, source';
     
     const result = await pool.query(query, params);
+    
+    // Generate filename with context
+    let filename = 'mappings_export';
+    if (dataSource && dataSource !== 'all') {
+      // Clean the source name for filename
+      const cleanSource = dataSource.replace(/[^a-zA-Z0-9_-]/g, '_');
+      filename += `_${cleanSource}`;
+    }
+    if (domain && domain !== 'all') {
+      filename += `_${domain}`;
+    }
+    const exportDate = new Date().toISOString().substring(0, 10);
+    filename += `_${exportDate}.csv`;
     
     const csv = await new Promise((resolve, reject) => {
       stringify(result.rows, {
@@ -149,7 +188,7 @@ export async function exportCSV(req, res) {
     });
     
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="mappings_export.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(csv);
   } catch (error) {
     console.error('Error exporting mappings:', error);

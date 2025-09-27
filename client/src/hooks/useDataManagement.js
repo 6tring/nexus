@@ -8,6 +8,11 @@ export function useDataManagement() {
   const [filteredMappings, setFilteredMappings] = useState([]);
   const [targets, setTargets] = useState([]);
   
+  // NEW: Source tracking state
+  const [sources, setSources] = useState([]);
+  const [selectedSource, setSelectedSource] = useState('all');
+  const [sourceStats, setSourceStats] = useState({ total: 0, bySource: {} });
+  
   // Filter and search state
   const [selectedDomain, setSelectedDomain] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,18 +38,50 @@ export function useDataManagement() {
   useEffect(() => {
     loadMappings();
     loadTargets();
+    loadSources(); // NEW: Load available sources
   }, []);
 
-  // Filter mappings when dependencies change
+  // Filter mappings when dependencies change (added selectedSource)
   useEffect(() => {
     filterMappings();
-  }, [mappings, selectedDomain, searchTerm]);
+  }, [mappings, selectedDomain, searchTerm, selectedSource]);
 
-  // Data loading functions
+  // Reload mappings when source changes
+  useEffect(() => {
+    if (selectedSource !== undefined) {
+      loadMappings();
+    }
+  }, [selectedSource]);
+
+  // NEW: Load available data sources
+  const loadSources = async () => {
+    try {
+      const data = await api.getSources();
+      setSources(data.sources || []);
+      setSourceStats({ 
+        total: data.total || 0, 
+        bySource: data.sources?.reduce((acc, src) => {
+          acc[src.name] = src.count;
+          return acc;
+        }, {}) || {}
+      });
+    } catch (error) {
+      console.error('Error loading sources:', error);
+      // Set default if API fails
+      setSources([{ name: 'all', displayName: 'All Sources', count: 0 }]);
+    }
+  };
+
+  // Data loading functions (enhanced with source filtering)
   const loadMappings = async () => {
     setLoading(true);
     try {
-      const data = await api.getMappings();
+      const params = {};
+      // Only add source filter if not 'all'
+      if (selectedSource && selectedSource !== 'all') {
+        params.dataSource = selectedSource;
+      }
+      const data = await api.getMappings(params);
       setMappings(data);
     } catch (error) {
       console.error('Error loading mappings:', error);
@@ -61,7 +98,7 @@ export function useDataManagement() {
     }
   };
 
-  // Filtering logic
+  // Filtering logic (now includes source consideration)
   const filterMappings = () => {
     let filtered = [...mappings];
 
@@ -78,7 +115,83 @@ export function useDataManagement() {
       );
     }
 
+    // Note: Source filtering happens at API level, not here
+    // This ensures we get correct counts and performance
+
     setFilteredMappings(filtered);
+  };
+
+  // NEW: Handle source change
+  const handleSourceChange = (newSource) => {
+    setSelectedSource(newSource);
+    // Clear selections when changing source
+    setSelectedRows(new Set());
+  };
+
+  // NEW: Clear sample data handler (actually clears ALL data)
+  const handleClearSampleData = async () => {
+    if (!window.confirm('⚠️ WARNING: This will delete ALL mappings from all sources. This action cannot be undone. Are you sure you want to continue?')) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const result = await api.clearSampleData();
+      
+      if (result.deletedCount === 0) {
+        alert('No data to clear.');
+      } else {
+        alert(`Successfully deleted ${result.deletedCount} mapping(s)`);
+      }
+      
+      // Reload sources and mappings
+      await loadSources();
+      await loadMappings();
+      
+      // Reset to 'all' view since we deleted everything
+      setSelectedSource('all');
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      alert('Failed to clear data');
+    }
+    setLoading(false);
+  };
+
+  // NEW: Delete a specific data source
+  const handleDeleteSource = async (sourceName) => {
+    // Get source info for confirmation message
+    const sourceInfo = sources.find(s => s.name === sourceName);
+    const count = sourceInfo ? sourceInfo.count : 0;
+    const displayName = sourceInfo ? sourceInfo.displayName : sourceName;
+    
+    if (!window.confirm(`Are you sure you want to delete "${displayName}"?\nThis will remove ${count} mapping(s). This action cannot be undone.`)) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const result = await api.deleteSource(sourceName);
+      
+      if (result.deletedCount === 0) {
+        alert('No mappings found for this source.');
+      } else {
+        alert(`Successfully deleted ${result.deletedCount} mapping(s) from "${displayName}"`);
+      }
+      
+      // Reload sources and mappings
+      await loadSources();
+      
+      // If we were viewing the deleted source, switch to all
+      if (selectedSource === sourceName) {
+        setSelectedSource('all');
+      } else {
+        await loadMappings();
+      }
+    } catch (error) {
+      console.error('Error deleting source:', error);
+      alert('Failed to delete data source. Please try again.');
+    }
+    setLoading(false);
   };
 
   // Cell editing handler
@@ -164,7 +277,7 @@ export function useDataManagement() {
     setSelectedRows(newSelected);
   };
 
-  // Import handler
+  // Import handler (enhanced to show source info)
   const handleImport = async (file) => {
     if (!file) return;
 
@@ -172,11 +285,15 @@ export function useDataManagement() {
     try {
       const result = await api.importMappings(file);
 
-      // Display import results to user
+      // Display import results to user (enhanced with source info)
       let message = `Import completed: ${result.imported} records added`;
+      
+      if (result.dataSource) {
+        message += `\nData source: ${result.dataSource}`;
+      }
 
       if (result.skipped > 0) {
-        message += `, ${result.skipped} skipped`;
+        message += `\n${result.skipped} skipped`;
       }
 
       if (result.duplicates && result.duplicates.length > 0) {
@@ -197,6 +314,8 @@ export function useDataManagement() {
 
       alert(message); // Simple solution - could be replaced with a better notification system
 
+      // Reload sources to get updated counts
+      await loadSources();
       await loadMappings();
     } catch (error) {
       console.error('Error importing file:', error);
@@ -205,12 +324,12 @@ export function useDataManagement() {
     setLoading(false);
   };
 
-  // Export handler
+  // Export handler (enhanced with source support)
   const handleExport = async () => {
     try {
-      await api.exportMappings(
-        selectedDomain === 'all' ? null : selectedDomain
-      );
+      const domain = selectedDomain === 'all' ? null : selectedDomain;
+      const source = selectedSource === 'all' ? null : selectedSource;
+      await api.exportMappings(domain, source);
     } catch (error) {
       console.error('Error exporting mappings:', error);
     }
@@ -232,6 +351,11 @@ export function useDataManagement() {
     filteredMappings,
     targets,
     domains,
+    
+    // NEW: Source-related data
+    sources,
+    selectedSource,
+    sourceStats,
     
     // Filter state
     selectedDomain,
@@ -257,5 +381,11 @@ export function useDataManagement() {
     handleExport,
     clearValidationError,
     loadMappings,
+    
+    // NEW: Source-related handlers
+    handleSourceChange,
+    handleClearSampleData,
+    handleDeleteSource,
+    loadSources,
   };
 }

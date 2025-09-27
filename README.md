@@ -72,6 +72,10 @@ This will run:
 ├── uploads/         # Temporary file uploads
 └── package.json     # Root package with concurrently
 
+## Database Setup
+Run the following to set up the database:
+`psql -U your_user -d your_db_name -f server/database/database.sql`
+
 ## Tech Stack
 
 - **Frontend**: React, Vite, CSS Modules

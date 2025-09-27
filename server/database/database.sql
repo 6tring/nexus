@@ -1,19 +1,22 @@
--- Database setup for Data Mapping Manager Lite
--- Run this file with: psql -U postgres -d mapping_manager_lite -f database.sql
+-- Database setup for Data Mapping Manager
+-- Complete schema with source tracking
+-- Run with: psql -U postgres -d your_database_name -f database.sql
 
--- Drop tables if they exist (for clean setup)
+-- Drop existing objects for clean setup
+DROP VIEW IF EXISTS source_statistics CASCADE;
 DROP TABLE IF EXISTS mappings CASCADE;
 DROP TABLE IF EXISTS targets CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- Create mappings table
+-- Create mappings table with all current columns
 CREATE TABLE mappings (
   id SERIAL PRIMARY KEY,
   client_id VARCHAR(50) DEFAULT 'default',
-  source VARCHAR(255) NOT NULL,
+  source VARCHAR(255) NOT NULL,  -- Entity/item name being mapped
   target VARCHAR(255),
   domain VARCHAR(50) NOT NULL CHECK (domain IN ('account', 'entity', 'product', 'department', 'location')),
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  data_source VARCHAR(255) DEFAULT 'manual',  -- Origin: manual, import_filename_timestamp, etc.
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -28,20 +31,32 @@ CREATE TABLE targets (
   UNIQUE(client_id, domain, code)
 );
 
--- Create users table
+-- Create users table (for future authentication)
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   role VARCHAR(50) DEFAULT 'editor'
 );
 
--- Create indexes for better performance
+-- Create all indexes
 CREATE INDEX idx_mappings_client_domain ON mappings(client_id, domain);
 CREATE INDEX idx_mappings_source ON mappings(source);
 CREATE INDEX idx_mappings_target ON mappings(target);
+CREATE INDEX idx_mappings_data_source ON mappings(data_source);
 CREATE INDEX idx_targets_client_domain ON targets(client_id, domain);
 
--- Insert sample data for testing
+-- Create source statistics view
+CREATE VIEW source_statistics AS
+SELECT 
+    data_source,
+    COUNT(*) as mapping_count,
+    MIN(created_at) as first_created,
+    MAX(created_at) as last_created
+FROM mappings
+GROUP BY data_source
+ORDER BY last_created DESC;
+
+-- Insert sample targets (reference data)
 INSERT INTO targets (client_id, code, name, domain) VALUES
   ('default', 'ACC001', 'Cash Account', 'account'),
   ('default', 'ACC002', 'Receivables Account', 'account'),
@@ -55,35 +70,15 @@ INSERT INTO targets (client_id, code, name, domain) VALUES
   ('default', 'LOC001', 'Headquarters', 'location'),
   ('default', 'LOC002', 'Branch Office', 'location');
 
--- Insert sample mappings
-INSERT INTO mappings (client_id, source, target, domain, status) VALUES
-  ('default', 'Cash on Hand', 'ACC001', 'account', 'active'),
-  ('default', 'Bank Balance', 'ACC001', 'account', 'active'),
-  ('default', 'Customer Receivables', 'ACC002', 'account', 'active'),
-  ('default', 'Vendor Payables', 'ACC003', 'account', 'active'),
-  ('default', 'Main Company', 'ENT001', 'entity', 'active'),
-  ('default', 'Sub Company A', 'ENT002', 'entity', 'active'),
-  ('default', 'Widget Product', 'PROD001', 'product', 'active'),
-  ('default', 'Gadget Product', 'PROD002', 'product', 'active'),
-  ('default', 'Finance Dept', 'DEPT001', 'department', 'active'),
-  ('default', 'Ops Department', 'DEPT002', 'department', 'active'),
-  ('default', 'HQ Location', 'LOC001', 'location', 'active'),
-  ('default', 'Branch 1', 'LOC002', 'location', 'active'),
-  ('default', 'Unmapped Item 1', NULL, 'account', 'active'),
-  ('default', 'Unmapped Item 2', NULL, 'entity', 'active'),
-  ('default', 'Unmapped Item 3', NULL, 'product', 'active');
-
--- Insert a default user
+-- Insert sample users
 INSERT INTO users (email, role) VALUES
   ('admin@example.com', 'admin'),
   ('editor@example.com', 'editor');
 
--- Display summary
-SELECT 
-  'Mappings' as table_name, 
-  COUNT(*) as record_count 
-FROM mappings
-UNION ALL
+-- Note: Not inserting sample mappings - let user import or create their own
+
+-- Display setup summary
+SELECT 'Database setup complete' as status;
 SELECT 
   'Targets' as table_name, 
   COUNT(*) as record_count 

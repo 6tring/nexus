@@ -10,11 +10,13 @@ import { fileURLToPath } from 'url';
 import mappingRoutes from './routes/mappings.js';
 import importRoutes from './routes/import.js';
 import targetRoutes from './routes/targets.js';
+import sourceRoutes from './routes/sources.js';
 
 // Import controllers to set pool
 import * as mappingController from './controllers/mappingController.js';
 import * as importController from './controllers/importController.js';
 import * as targetController from './controllers/targetController.js';
+import * as sourceController from './controllers/sourceController.js';
 
 dotenv.config();
 
@@ -28,9 +30,9 @@ const PORT = process.env.SERVER_PORT || 3000;
 const pool = new pg.Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'data_mapping_manager_lite_db',
-  user: process.env.DB_USER || 'mapping_admin_lite',
-  password: process.env.DB_PASSWORD || null,
+  database: process.env.DB_NAME || 'data_mapping_manager_app_db',
+  user: process.env.DB_USER || 'data_mapping_manager_app_admin',
+  password: process.env.DB_PASSWORD || 'data',
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
@@ -40,6 +42,7 @@ const pool = new pg.Pool({
 mappingController.setPool(pool);
 importController.setPool(pool);
 targetController.setPool(pool);
+sourceController.setPool(pool);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -68,6 +71,7 @@ pool.query('SELECT NOW()')
 app.use('/api/mappings', mappingRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api', importRoutes);  // import/export routes
+app.use('/api/sources', sourceRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
