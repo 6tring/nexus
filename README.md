@@ -1,4 +1,4 @@
-# Data Mapping Manager Lite
+# Data Mapping Manager
 
 A simplified data mapping management tool for mapping source values to target codes across different domains.
 
