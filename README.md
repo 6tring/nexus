@@ -1,49 +1,55 @@
-# Data Mapping Manager
+# Nexus
 
-A simplified data mapping management tool for mapping source values to target codes across different domains.
+A data mapping management tool for mapping source values to target codes across configurable domains.
 
 ## Features
 
 - View and edit data mappings in a table interface
 - Filter by domain (account, entity, product, department, location)
-- Search source/target values
+- Search source and target values
 - Bulk update selected mappings
 - Import/Export CSV files
+- Built-in study guide with architecture walkthrough
 
 ## Prerequisites
 
 - Node.js 18+
 - PostgreSQL 14+
-- npm or yarn
 
 ## Installation
 
-1. Clone the repository
-git clone [repository-url]
-cd data-mapping-manager-lite
+1. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   cd nexus
+   ```
 
-2. Install all dependencies
-npm run install:all
+2. Install all dependencies:
+   ```bash
+   npm run install:all
+   ```
 
-3. Set up PostgreSQL database
-createdb mapping_manager_lite
+3. Set up PostgreSQL database:
+   ```bash
+   createdb mapping_manager_lite
+   ```
 
-4. Configure environment variables
-   - Copy `.env.example` to `.env` (or manually create `.env`)
-   - Update database credentials in `.env`:
-     - `DB_USER` - Your PostgreSQL username
-     - `DB_PASSWORD` - Your PostgreSQL password
-     - `DB_NAME` - Keep as `mapping_manager_lite`
+4. Configure environment variables — copy `.env.example` to `.env` and update:
+   - `DB_USER` — your PostgreSQL username
+   - `DB_PASSWORD` — your PostgreSQL password
+   - `DB_NAME` — keep as `mapping_manager_lite`
 
-5. Run database setup
-npm run setup:db
+5. Run database setup:
+   ```bash
+   npm run setup:db
+   ```
 
 ## Development
 
-Start both frontend and backend servers:
+```bash
 npm run dev
+```
 
-This will run:
 - Frontend (React + Vite): http://localhost:5173
 - Backend API (Express): http://localhost:3000
 
@@ -59,26 +65,15 @@ This will run:
 | GET | `/api/targets` | Get target values for dropdown |
 
 ### Query Parameters for GET /api/mappings
-- `domain` - Filter by domain (account, entity, product, department, location)
-- `search` - Search in source/target fields
-- `status` - Filter by status (active, inactive)
-- `page` - Page number (default: 1)
-- `limit` - Items per page (default: 100)
-
-## Project Structure
-
-├── client/          # React frontend
-├── server/          # Express backend
-├── uploads/         # Temporary file uploads
-└── package.json     # Root package with concurrently
-
-## Database Setup
-Run the following to set up the database:
-`psql -U your_user -d your_db_name -f server/database/database.sql`
+- `domain` — filter by domain (account, entity, product, department, location)
+- `search` — search in source/target fields
+- `status` — filter by status (active, inactive)
+- `page` — page number (default: 1)
+- `limit` — items per page (default: 100)
 
 ## Tech Stack
 
-- **Frontend**: React, Vite, CSS Modules
+- **Frontend**: React, React Router, Vite
 - **Backend**: Node.js, Express, PostgreSQL
 - **Database**: PostgreSQL with pg driver
 - **Dev Tools**: Concurrently, ESLint

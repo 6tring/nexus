@@ -1,0 +1,357 @@
+/* Top Navigation Bar */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 24px;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-nav-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.top-nav-tabs {
+  display: flex;
+  gap: 0;
+  height: 100%;
+}
+
+.top-nav-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.top-nav-tab:hover {
+  color: #333;
+}
+
+.top-nav-tab.active {
+  color: #2c5282;
+  border-bottom-color: #2c5282;
+}
+
+/* Guide Layout */
+.guide-layout {
+  display: flex;
+  min-height: calc(100vh - 52px);
+}
+
+.guide-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  padding: 20px 0;
+  position: sticky;
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
+}
+
+.guide-sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+
+.guide-sidebar-link {
+  display: block;
+  padding: 7px 16px;
+  font-size: 13px;
+  color: #555;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.guide-sidebar-link:hover {
+  background-color: #eef1f5;
+  color: #333;
+}
+
+.guide-sidebar-link.active {
+  color: #2c5282;
+  border-left-color: #2c5282;
+  background-color: #e8f0fe;
+  font-weight: 500;
+}
+
+/* Guide Content */
+.guide-content {
+  flex: 1;
+  padding: 32px 40px;
+  max-width: 860px;
+  min-width: 0;
+}
+
+.guide-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  text-align: left;
+}
+
+.guide-content h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 40px 0 16px 0;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+}
+
+.guide-content h2:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.guide-content h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #333;
+  margin: 24px 0 10px 0;
+}
+
+.guide-content p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #444;
+  margin: 0 0 12px 0;
+}
+
+.guide-content ul,
+.guide-content ol {
+  padding-left: 24px;
+  margin: 0 0 16px 0;
+}
+
+.guide-content li {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.guide-subtitle {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 24px 0;
+}
+
+/* Info Boxes */
+.guide-info-box {
+  background-color: #e8f4fd;
+  border-left: 4px solid #2196f3;
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a5276;
+}
+
+.guide-tip-box {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4caf50;
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1b5e20;
+}
+
+.guide-warning-box {
+  background-color: #fff8e1;
+  border-left: 4px solid #ff9800;
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #e65100;
+}
+
+/* Code Blocks */
+.code-block-wrapper {
+  margin: 16px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 8px 14px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.code-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.code-copy-btn {
+  font-size: 12px;
+  color: #2c5282;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.code-copy-btn:hover {
+  background-color: #e8f0fe;
+}
+
+.code-block {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.code-block code {
+  font-family: inherit;
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.guide-content code {
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  color: #d63384;
+}
+
+.code-block code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* File Tree */
+.file-tree {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre;
+}
+
+/* API Reference Table */
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.api-table th {
+  background-color: #f5f5f5;
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.api-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  color: #444;
+}
+
+.api-table tr:hover td {
+  background-color: #f9f9f9;
+}
+
+.method-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'SF Mono', Menlo, monospace;
+}
+
+.method-get { background-color: #e8f5e9; color: #2e7d32; }
+.method-post { background-color: #e3f2fd; color: #1565c0; }
+.method-put { background-color: #fff3e0; color: #e65100; }
+.method-patch { background-color: #f3e5f5; color: #7b1fa2; }
+.method-delete { background-color: #ffebee; color: #c62828; }
+
+/* Learning Path Steps */
+.learning-step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.learning-step-number {
+  width: 32px;
+  height: 32px;
+  background-color: #2c5282;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.learning-step-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.learning-step-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}

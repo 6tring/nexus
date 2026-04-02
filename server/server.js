@@ -25,7 +25,7 @@ import * as targetController from './controllers/targetController.js';
 import * as sourceController from './controllers/sourceController.js';
 import * as auditController from './controllers/auditController.js';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

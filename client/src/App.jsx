@@ -1,12 +1,14 @@
 import React from 'react';
+import { Routes, Route, NavLink } from 'react-router-dom';
 import { useDataManagement } from './hooks/useDataManagement';
 import MappingTable from './components/MappingTable';
 import TableControls from './components/TableControls';
 import ImportExport from './components/ImportExport';
 import SourceSelector from './components/SourceSelector';
+import GuidePage from './pages/GuidePage';
 import './styles/app.css';
 
-function App() {
+function DataMappingApp() {
   const {
     // Data
     filteredMappings,
@@ -93,6 +95,28 @@ function App() {
         onRefresh={refreshData} // Pass the refresh function to MappingTable
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <nav className="top-nav">
+        <span className="top-nav-title">Data Mapping Manager</span>
+        <div className="top-nav-tabs">
+          <NavLink to="/" end className={({ isActive }) => `top-nav-tab ${isActive ? 'active' : ''}`}>
+            App
+          </NavLink>
+          <NavLink to="/guide" className={({ isActive }) => `top-nav-tab ${isActive ? 'active' : ''}`}>
+            Study Guide
+          </NavLink>
+        </div>
+      </nav>
+      <Routes>
+        <Route path="/" element={<DataMappingApp />} />
+        <Route path="/guide" element={<GuidePage />} />
+      </Routes>
+    </>
   );
 }
 
