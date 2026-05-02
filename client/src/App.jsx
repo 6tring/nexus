@@ -102,7 +102,7 @@ function App() {
   return (
     <>
       <nav className="top-nav">
-        <span className="top-nav-title">Data Mapping Manager</span>
+        <span className="top-nav-title">Nexus</span>
         <div className="top-nav-tabs">
           <NavLink to="/" end className={({ isActive }) => `top-nav-tab ${isActive ? 'active' : ''}`}>
             App

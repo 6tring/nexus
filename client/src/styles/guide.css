@@ -13,9 +13,10 @@
 }
 
 .top-nav-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  font-size: 18px;
+  font-weight: 700;
+  color: #b03030;
+  letter-spacing: 0.5px;
 }
 
 .top-nav-tabs {
